@@ -1,0 +1,45 @@
+import argparse
+from PIL import Image
+from PIL.ExifTags import TAGS
+import simplekml
+import sys
+
+def extract_exif(image_path):
+    """Extracts EXIF data from an image file using PIL.
+    Returns a dictionary of key-value pairs for the EXIF data.
+    """
+    exif_data = {}
+    with Image.open(image_path) as img:
+        exif_info = img._getexif()
+        if exif_info:
+            for tag, value in exif_info.items():
+                decoded = TAGS.get(tag, tag)
+                exif_data[decoded] = value
+    return exif_data
+
+def create_kml(exif_data, kml_file):
+    """Creates a Google Earth KML file based on the GPS coordinates found in the EXIF data.
+    Returns the URL to view the KML data in a browser.
+    """
+    kml = simplekml.Kml()
+    gps_info = exif_data.get('GPSInfo', {})
+    latitude = gps_info.get(2, (0, 1))[0] / gps_info.get(2, (0, 1))[1]
+    longitude = gps_info.get(4, (0, 1))[0] / gps_info.get(4, (0, 1))[1]
+    kml.newpoint(name="GPS Coordinates", coords=[(longitude, latitude)])
+    kml.save(kml_file)
+    return f"https://maps.google.com/?q={latitude},{longitude}"
+
+def main(image_path, kml_file):
+    exif_data = extract_exif(image_path)
+    if 'GPSInfo' in exif_data:
+        url = create_kml(exif_data, kml_file)
+        print(f"Google URL: {url}")
+    else:
+        print("No GPS coordinates found in image.")
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Extracts EXIF data and creates a Google Earth KML file based on the GPS coordinates found in an image.')
+    parser.add_argument('image_path', help='The path to the input image file')
+    parser.add_argument('kml_file', help='The path to the output KML file')
+    args = parser.parse_args()
+    main(args.image_path, args.kml_file)
