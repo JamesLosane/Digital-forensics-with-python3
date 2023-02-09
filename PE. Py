@@ -1,0 +1,39 @@
+import argparse
+import pefile
+
+def parse_pe_header(file_path):
+    pe = pefile.PE(file_path)
+    print("[+] File Name: {}".format(file_path))
+    print("[+] PE Type: {}".format("PE32" if pe.PE_TYPE == 0x10b else "PE32+"))
+    print("[+] Image Base Address: 0x{:x}".format(pe.OPTIONAL_HEADER.ImageBase))
+    print("[+] Entry Point Address: 0x{:x}".format(pe.OPTIONAL_HEADER.AddressOfEntryPoint))
+    print("[+] Time Stamp: {}".format(pe.FILE_HEADER.TimeDateStamp))
+    print("[+] DLL Characteristics: {}".format(pe.OPTIONAL_HEADER.DllCharacteristics))
+    print("[+] Number of Sections: {}".format(pe.FILE_HEADER.NumberOfSections))
+    for section in pe.sections:
+        print("[+] Section Name: {}".format(section.Name.decode().strip("\x00")))
+        print("[+] Section Virtual Address: 0x{:x}".format(section.VirtualAddress))
+        print("[+] Section Virtual Size: 0x{:x}".format(section.Misc_VirtualSize))
+        print("[+] Section Raw Data Size: 0x{:x}".format(section.SizeOfRawData))
+        print("[+] Section Characteristics: 0x{:x}".format(section.Characteristics))
+    print("[+] Imported DLLs:")
+    for lib in pe.DIRECTORY_ENTRY_IMPORT:
+        print("[+]\t {}".format(lib.dll))
+        for imp in lib.imports:
+            print("[+]\t\t {}".format(imp.name))
+    print("[+] Exported Functions:")
+    for exp in pe.DIRECTORY_ENTRY_EXPORT.symbols:
+        print("[+]\t {}".format(exp.name))
+
+def main():
+    parser = argparse.ArgumentParser(description="Static analysis of PE files.")
+    parser.add_argument("file", help="PE file to analyze.")
+    args = parser.parse_args()
+
+    try:
+        parse_pe_header(args.file)
+    except Exception as e:
+        print("[-] Error: {}".format(e))
+
+if __name__ == "__main__":
+    main()
