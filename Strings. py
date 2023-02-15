@@ -1,0 +1,54 @@
+import argparse
+import magic
+import pefile
+import os
+import sys
+
+def get_file_type(filepath):
+    return magic.from_file(filepath)
+
+def get_strings(filepath):
+    with open(filepath, 'rb') as f:
+        data = f.read()
+    return [s.decode('utf-8', 'ignore') for s in data.split(b'\x00') if s]
+
+def analyze_file(filepath, strings_only, file_type_only):
+    if not os.path.isfile(filepath):
+        print(f"{filepath} is not a file")
+        sys.exit(1)
+
+    if not file_type_only:
+        if not strings_only:
+            print(f"{filepath}:")
+            print(f"    file type: {get_file_type(filepath)}")
+        print("    strings:")
+        for string in get_strings(filepath):
+            print(f"        {string}")
+
+    else:
+        print(get_file_type(filepath))
+
+def main():
+    parser = argparse.ArgumentParser(description='Python utility to analyze file types and extract strings')
+    parser.add_argument('filepath', metavar='file', type=str, help='path to the file')
+    parser.add_argument('-s', '--strings-only', action='store_true', help='print only strings')
+def main():
+    # Set up command-line arguments
+    parser = argparse.ArgumentParser(description='Analyze files for malware')
+    parser.add_argument('file', type=str, help='Path to file')
+    parser.add_argument('--strings-only', action='store_true', help='Only analyze file strings')
+    parser.add_argument('--file-type-only', type=str, help='Only analyze files of a certain type')
+    parser.add_argument('--usage', action='store_true', help='Show usage')
+    args = parser.parse_args()
+
+    # Show usage if requested
+    if args.usage:
+        parser.print_usage()
+        sys.exit(0)
+
+    # Analyze file
+    analyze_file(args.file, args.strings_only, args.file_type_only)
+
+
+if __name__ == '__main__':
+    main()
