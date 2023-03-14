@@ -1,0 +1,33 @@
+import argparse
+import pytsk3
+
+# Define the command-line arguments
+parser = argparse.ArgumentParser(description="Extract information from the Master File Table (MFT) of a disk image")
+parser.add_argument("image_path", type=str, help="Path to the disk image file")
+parser.add_argument("-o", "--mft-offset", type=int, default=0, help="Offset of the MFT within the image file (in bytes)")
+
+# Parse the command-line arguments
+args = parser.parse_args()
+
+# Open the disk image and the file system
+img = pytsk3.Img_Info(args.image_path)
+fs = pytsk3.FS_Info(img, offset=args.mft_offset)
+
+# Iterate through the entries in the MFT
+for mft_entry in fs.open_meta(inode=0).get_entries():
+
+    # Check if the entry is a file
+    if mft_entry.info.type == pytsk3.TSK_FS_META_TYPE_REG:
+
+        # Extract information about the file
+        filename = mft_entry.info.name.name.decode("utf-8")
+        creation_time = mft_entry.info.meta.mtime
+        modified_time = mft_entry.info.meta.crtime
+        size = mft_entry.info.meta.size
+        inode = mft_entry.info.meta.addr
+
+        # Print the information to the console
+        print("File: %s\nCreated: %s\nModified: %s\nSize: %d bytes\nInode: %d" % (
+            filename, creation_time, modified_time, size, inode))
+
+        # Add additional functionality here
