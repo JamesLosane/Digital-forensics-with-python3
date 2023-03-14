@@ -1,0 +1,8 @@
+import dfvfs.lib.mft
+import dfvfs.path.path_spec
+
+image_path = "/path/to/image.dd"
+offset = 0 # or the offset of the MFT in the image
+path_spec = dfvfs.path.path_spec.OSPathSpec(location=image_path)
+fs = dfvfs.lib.mft.MFTFileSystem(path_spec=path_spec, offset=offset)
+mft = fs.mft
